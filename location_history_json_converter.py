@@ -152,7 +152,7 @@ def _write_header(output, format, js_variable, separator):
         return
 
 
-def _write_location(output, format, location, separator, first, last_location):
+def _write_location(output, format, location, separator, first, last_location, nextcloud_devicename):
     """Writes the data for one location to output according to specified format"""
 
     if format == "json" or format == "js":
@@ -289,6 +289,11 @@ def _write_location(output, format, location, separator, first, last_location):
     if format == "gpxtracks":
         if first:
             output.write("  <trk>\n")
+
+        if nextcloud_devicename:
+            output.write("  <name>%s</name>\n" % nextcloud_devicename)
+
+        if first:
             output.write("    <trkseg>\n")
 
         if last_location:
@@ -304,6 +309,10 @@ def _write_location(output, format, location, separator, first, last_location):
                 output.write("    </trkseg>\n")
                 output.write("  </trk>\n")
                 output.write("  <trk>\n")
+
+                if nextcloud_devicename:
+                    output.write("  <name>%s</name>\n" % nextcloud_devicename)
+
                 output.write("    <trkseg>\n")
 
         output.write(
@@ -349,7 +358,7 @@ def _write_footer(output, format):
 def convert(locations, output, format="kml",
             js_variable="locationJsonData", separator=",",
             start_date=None, end_date=None, accuracy=None, polygon=None,
-            chronological=False):
+            chronological=False,nextcloud_devicename=None):
     """Converts the provided locations to the specified format
 
     Parameters
@@ -427,7 +436,7 @@ def convert(locations, output, format="kml",
         if item["longitudeE7"] > 1800000000:
             item["longitudeE7"] = item["longitudeE7"] - 4294967296
 
-        _write_location(output, format, item, separator, first, last_loc)
+        _write_location(output, format, item, separator, first, last_loc, nextcloud_devicename)
 
         if first:
             first = False
@@ -455,6 +464,12 @@ def main():
         "-i", "--iterative",
         help="Loads the JSON file iteratively, to be able to handle bigger files",
         action="store_true"
+    )
+
+    arg_parser.add_argument(
+        "-n", "--nextcloud",
+        help="Device name for import into Nextcloud",
+        default=""
     )
 
     arg_parser.add_argument("-s", "--startdate", help="The Start Date - format YYYY-MM-DD (defaults to 0h00m)", type=_valid_date)
@@ -591,7 +606,8 @@ def main():
         end_date=args.enddate,
         accuracy=args.accuracy,
         polygon=polygon,
-        chronological=args.chronological
+        chronological=args.chronological,
+        nextcloud_devicename=args.nextcloud
     )
 
     f_out.close()
